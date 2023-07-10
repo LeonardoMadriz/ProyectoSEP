@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import impedancia
+import ybus
 
 #Lectura del archivo excel a trabajar
 df_gen = pd.read_excel("data_io.xlsx","GENERATION")                 #Generador
@@ -9,9 +10,10 @@ df_load = pd.read_excel("data_io.xlsx","LOAD")                      #Cargas
 
 
 #Numero de barras del sistema electrico de potencia
-num_barras_i = max(df_lines.iloc[:,1])
-num_barras_j = max(df_lines.iloc[:,2])
-num_barras = max(num_barras_i,num_barras_j)
+num_barras_i = max(df_lines.iloc[:,0])
+num_barras_j = max(df_lines.iloc[:,1])
+num_barras = int(max(num_barras_i,num_barras_j))
+print(num_barras)
 
 
 #Ordenando los datos del sistemas electrico de potencia(SEP)
@@ -22,8 +24,6 @@ phi = np.array(df_gen.iloc[:,3])                                    #Angulo faso
 voltaje = np.array(df_gen.iloc[:,2])                                #Voltaje de la fuente
 barra_gen_i = np.array(df_gen.iloc[:,0])                            #Barra de conexion i
 barra_gen_j = np.full((len(df_gen.iloc[:,0])),0)                    #Barra de conexion j
-index_gen =  np.concatenate(([barra_gen_i],[barra_gen_j]), axis=0)  #Matrix de conexion de lo generadores
-index_gen = np.transpose(index_gen) 
 
 #CARGAS
 imp_resis_carga = np.array(df_load.iloc[:,9])                       #Impedancia resistiva
@@ -48,14 +48,37 @@ index_linea = np.transpose(index_linea)
 
 
 def run():
+    #Generadores
     imp_gen = impedancia.generador(imp_resis_gen,imp_react_gen)
+    gen =  np.concatenate(([barra_gen_i],[barra_gen_j],[imp_gen]), axis=0)
+    gen = np.transpose(gen)
+    gen = np.round(gen,4)
+    
+    #Cargas
     imp_carga = impedancia.carga(imp_resis_carga, imp_react_carga, tipo_carga)
+    carga = np.concatenate(([barra_carga_i],[barra_carga_j],[imp_carga]),axis=0)
+    carga = np.transpose(carga)
+    carga = np.round(carga,4)
+
+    #Lineas
     imp_linea, y_shunt = impedancia.linea(imp_resis_linea,imp_react_linea,longitud, b_shunt)
+    linea = np.concatenate(([barra_linea_i],[barra_linea_j],[imp_linea]),axis=0)      
+    linea = np.transpose(linea)
+    linea = np.round(linea,4)
+   
+    #Corrientes inyectadas
     corrientes_inyectadas = impedancia.corrientes(voltaje,phi,imp_gen)
-    print("corrientes inyectadas: ", corrientes_inyectadas)
-    print("impedancias generador: ", imp_gen)
-    print("impedancias de linea: ", imp_linea)
-    print("impedancia de carga: ", imp_carga)
+
+    #Y bus
+    y_bus = ybus.ybus(gen, carga, linea, num_barras,barra_linea_i,barra_linea_j,y_shunt, longitud)
+    for i in y_bus:
+        print(*i)
+
+
+
+
+
+
 
 if __name__ == "__main__":
     run()
