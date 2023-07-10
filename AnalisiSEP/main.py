@@ -13,7 +13,7 @@ df_load = pd.read_excel("data_io.xlsx","LOAD")                      #Cargas
 num_barras_i = max(df_lines.iloc[:,0])
 num_barras_j = max(df_lines.iloc[:,1])
 num_barras = int(max(num_barras_i,num_barras_j))
-print(num_barras)
+
 
 
 #Ordenando los datos del sistemas electrico de potencia(SEP)
@@ -67,12 +67,24 @@ def run():
     linea = np.round(linea,4)
    
     #Corrientes inyectadas
-    corrientes_inyectadas = impedancia.corrientes(voltaje,phi,imp_gen)
+    corrientes_inyectadas = impedancia.corrientes(voltaje,phi,imp_gen,num_barras, barra_gen_i)
+    #print(corrientes_inyectadas)
 
     #Y bus
     y_bus = ybus.ybus(gen, carga, linea, num_barras,barra_linea_i,barra_linea_j,y_shunt, longitud)
-    for i in y_bus:
-        print(*i)
+    #print(y_bus)
+
+    #Z de thevenin
+    zth, zbus = ybus.Zth(y_bus)
+
+    #Voltajes de thevenin
+    vth = ybus.Vth(zbus,corrientes_inyectadas,num_barras)
+    
+    #GBUS
+    g_bus = ybus.gbus(y_bus,num_barras)
+
+    #BBUS
+    b_bus = ybus.bbus(y_bus,num_barras)
 
 
 

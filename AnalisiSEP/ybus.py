@@ -1,5 +1,6 @@
 import numpy as np
-import sys
+import cmath
+import math
 
 def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longitud):
     matriz_dato = np.concatenate([generador, carga, linea], axis=0)
@@ -12,11 +13,18 @@ def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longit
     for k in range(filas):
         i = int(matriz_dato[k,0].real-1)
         j = int(matriz_dato[k,1].real-1)
-        if i != -1 and j != -1:
+
+        print("Valori",i)
+        print("Valorj",j)
+        
+        if i == -1 and j == -1:
+            continue
+        else:
+            print("condicion")
             if i == -1:
-                i += 1
+                i = i+1
             elif j == -1:
-                j += 1
+                j = j+1
             salida_bus[i,j] = (-1)/(matriz_dato[k,2])
             salida_bus[i,j] = round(salida_bus[i,j],4)
             salida_bus[j,i] = salida_bus[i,j]
@@ -47,10 +55,38 @@ def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longit
 
     salida_bus = salida_bus + matriz_shunt
 
-
-
-
-
-
     return salida_bus
 
+def Zth(y_bus):
+    z_bus = np.linalg.inv(y_bus)
+    zth = np.diag(z_bus)
+    return zth, z_bus
+
+def Vth(z_bus, corrientes, num_barra):
+    vth = np.inner(z_bus,np.transpose(corrientes))
+    matriz_thevenin = np.zeros((num_barra,2))
+    
+    for i in range(num_barra):
+        matriz_thevenin[i,0],matriz_thevenin[i,1] = cmath.polar(vth[i])
+
+    for i in range(num_barra):
+        matriz_thevenin[i,1] = matriz_thevenin[i,1]*180/math.pi
+    return matriz_thevenin
+
+def gbus(ybus,num_barra):
+    g_bus=np.zeros((num_barra,num_barra))
+
+    for i in range(num_barra):
+        for j in range(num_barra):
+            g_bus[i,j] = ybus[i,j].real
+
+    return g_bus
+
+def bbus(ybus,num_barra):
+    b_bus=np.zeros((num_barra,num_barra))
+
+    for i in range(num_barra):
+        for j in range(num_barra):
+            b_bus[i,j] = ybus[i,j].imag
+
+    return b_bus

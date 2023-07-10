@@ -35,14 +35,16 @@ def linea(l_res,l_reac, longitud, b_shunt):
     return impedancia_linea, y_shunt
 
 #Calculo de las corrientes inyectadas
-def corrientes(voltaje,phi,impedancia_corto):
+def corrientes(voltaje,phi,impedancia_corto,num_barra,ind_g):
     #Grados a radianes
     for i in range(len(phi)):
         phi[i]= (phi[i] * math.pi)/180
-    
-    corriente_inyect = impedancia_corto
-    #Voltajes de polar a rectangular
-    for i in range(len(voltaje)):
-        corriente_inyect[i] = voltaje[i]*(math.cos(phi[i]) + 1j*math.sin(phi[i]))/impedancia_corto[i]
-        corriente_inyect[i] = round(corriente_inyect[i],4)
+
+
+    corriente_inyect = np.zeros((num_barra,1),dtype="complex_")
+    for i in range(len(ind_g)):
+        indice = ind_g[i]-1
+        corriente_inyect[indice] = voltaje[i]*(math.cos(phi[i]) + 1j*math.sin(phi[i]))/impedancia_corto[i]
+    corriente_inyect = np.round(corriente_inyect,4)
+
     return corriente_inyect
