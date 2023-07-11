@@ -7,26 +7,17 @@ def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longit
     salida_bus = np.zeros((num_barras,num_barras),dtype="complex_")
 
 
+
     filas, columnas = matriz_dato.shape
 
 #admitancias de las lineas (fuera de la diagonal)
     for k in range(filas):
         i = int(matriz_dato[k,0].real-1)
-        j = int(matriz_dato[k,1].real-1)
-
-        print("Valori",i)
-        print("Valorj",j)
-        
-        if i == -1 and j == -1:
+        j = int(matriz_dato[k,1].real-1)       
+        if i == -1 or j == -1:
             continue
         else:
-            print("condicion")
-            if i == -1:
-                i = i+1
-            elif j == -1:
-                j = j+1
             salida_bus[i,j] = (-1)/(matriz_dato[k,2])
-            salida_bus[i,j] = round(salida_bus[i,j],4)
             salida_bus[j,i] = salida_bus[i,j]
 
 #admitancias de la diagonal

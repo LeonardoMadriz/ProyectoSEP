@@ -20,7 +20,7 @@ num_barras = int(max(num_barras_i,num_barras_j))
 #GENERADOR:
 imp_resis_gen = np.array(df_gen.iloc[:,4])                          #Impedancia resistiva
 imp_react_gen = np.array(df_gen.iloc[:,5])                          #Impedancia reactiva
-phi = np.array(df_gen.iloc[:,3])                                    #Angulo fasor voltaje
+phi = np.array(df_gen.iloc[:,3],dtype="float_")                                    #Angulo fasor voltaje
 voltaje = np.array(df_gen.iloc[:,2])                                #Voltaje de la fuente
 barra_gen_i = np.array(df_gen.iloc[:,0])                            #Barra de conexion i
 barra_gen_j = np.full((len(df_gen.iloc[:,0])),0)                    #Barra de conexion j
@@ -86,7 +86,7 @@ def run():
     #BBUS
     b_bus = ybus.bbus(y_bus,num_barras)
 
-
+    print(vth)
 
 
 

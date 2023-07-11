@@ -27,7 +27,7 @@ def carga(c_res,c_reac, tipo):
 
 #Calculo de las impedancias de linea
 def linea(l_res,l_reac, longitud, b_shunt):
-    y_shunt = b_shunt*1j
+    y_shunt = b_shunt*1j*longitud
     x = l_reac*1j
     impedancia_linea = np.add(l_res,x)
     for i in range(len(longitud)):
@@ -39,7 +39,6 @@ def corrientes(voltaje,phi,impedancia_corto,num_barra,ind_g):
     #Grados a radianes
     for i in range(len(phi)):
         phi[i]= (phi[i] * math.pi)/180
-
 
     corriente_inyect = np.zeros((num_barra,1),dtype="complex_")
     for i in range(len(ind_g)):
