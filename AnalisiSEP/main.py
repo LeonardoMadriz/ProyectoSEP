@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import impedancia
 import ybus
+import potencia
 
 #Lectura del archivo excel a trabajar
 df_gen = pd.read_excel("data_io.xlsx","GENERATION")                 #Generador
@@ -16,11 +17,11 @@ num_barras = int(max(num_barras_i,num_barras_j))
 
 
 
-#Ordenando los datos del sistemas electrico de potencia(SEP)
+#----------------------------------------------------- ORDENANDO LOS DATOS LEIDOS --------------------------------------------------------
 #GENERADOR:
 imp_resis_gen = np.array(df_gen.iloc[:,4])                          #Impedancia resistiva
 imp_react_gen = np.array(df_gen.iloc[:,5])                          #Impedancia reactiva
-phi = np.array(df_gen.iloc[:,3],dtype="float_")                                    #Angulo fasor voltaje
+phi = np.array(df_gen.iloc[:,3],dtype="float_")                     #Angulo fasor voltaje
 voltaje = np.array(df_gen.iloc[:,2])                                #Voltaje de la fuente
 barra_gen_i = np.array(df_gen.iloc[:,0])                            #Barra de conexion i
 barra_gen_j = np.full((len(df_gen.iloc[:,0])),0)                    #Barra de conexion j
@@ -48,6 +49,7 @@ index_linea = np.transpose(index_linea)
 
 
 def run():
+#---------------------------------------------- CALCULO DE LAS IMPEDANCIAS---------------------------------------------- 
     #Generadores
     imp_gen = impedancia.generador(imp_resis_gen,imp_react_gen)
     gen =  np.concatenate(([barra_gen_i],[barra_gen_j],[imp_gen]), axis=0)
@@ -66,19 +68,18 @@ def run():
     linea = np.transpose(linea)
     linea = np.round(linea,4)
    
+#------------------------------------------------- CALCULO DE YBUS, VTH Y ZTH --------------------------------------------------
     #Corrientes inyectadas
     corrientes_inyectadas = impedancia.corrientes(voltaje,phi,imp_gen,num_barras, barra_gen_i)
-    #print(corrientes_inyectadas)
 
     #Y bus
     y_bus = ybus.ybus(gen, carga, linea, num_barras,barra_linea_i,barra_linea_j,y_shunt, longitud)
-    #print(y_bus)
 
     #Z de thevenin
     zth, zbus = ybus.Zth(y_bus)
 
     #Voltajes de thevenin
-    vth = ybus.Vth(zbus,corrientes_inyectadas,num_barras)
+    vth,vth_rect = ybus.Vth(zbus,corrientes_inyectadas,num_barras)
     
     #GBUS
     g_bus = ybus.gbus(y_bus,num_barras)
@@ -86,7 +87,10 @@ def run():
     #BBUS
     b_bus = ybus.bbus(y_bus,num_barras)
 
-    print(vth)
+#------------------------------------------------ CALCULO DE LAS POTENCIAS ------------------------------------------------
+
+    #Potencia del generador
+    p_gen, q_gen= potencia.generador(imp_gen, voltaje, phi, vth_rect, barra_gen_i)
 
 
 

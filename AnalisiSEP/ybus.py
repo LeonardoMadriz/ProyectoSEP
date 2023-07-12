@@ -2,11 +2,10 @@ import numpy as np
 import cmath
 import math
 
+#------------------------------------------------------- Y BUS ---------------------------------------------------------
 def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longitud):
     matriz_dato = np.concatenate([generador, carga, linea], axis=0)
     salida_bus = np.zeros((num_barras,num_barras),dtype="complex_")
-
-
 
     filas, columnas = matriz_dato.shape
 
@@ -48,22 +47,27 @@ def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longit
 
     return salida_bus
 
+#--------------------------------------------------- Z Thevenin ----------------------------------------------------
 def Zth(y_bus):
     z_bus = np.linalg.inv(y_bus)
     zth = np.diag(z_bus)
     return zth, z_bus
 
+#----------------------------------------------------- V Thevenin ---------------------------------------------------
 def Vth(z_bus, corrientes, num_barra):
     vth = np.inner(z_bus,np.transpose(corrientes))
     matriz_thevenin = np.zeros((num_barra,2))
-    
+
+#Forma polar    
     for i in range(num_barra):
         matriz_thevenin[i,0],matriz_thevenin[i,1] = cmath.polar(vth[i])
 
+#Radianes a grados
     for i in range(num_barra):
         matriz_thevenin[i,1] = matriz_thevenin[i,1]*180/math.pi
-    return matriz_thevenin
+    return matriz_thevenin,vth
 
+#----------------------------------------------------- G BUS -------------------------------------------------------
 def gbus(ybus,num_barra):
     g_bus=np.zeros((num_barra,num_barra))
 
@@ -73,6 +77,7 @@ def gbus(ybus,num_barra):
 
     return g_bus
 
+#---------------------------------------------------- B BUS --------------------------------------------------------
 def bbus(ybus,num_barra):
     b_bus=np.zeros((num_barra,num_barra))
 

@@ -1,49 +1,56 @@
 import numpy as np
 import math
 
-#Cálculo de las impedancias de cortocircuito
+#---------------------------------------------IMPEDANCIAS DE LOS GENERADORES------------------------------------------
 def generador(g_res,g_reac):
+#Impedancia del generador
     x =(g_reac)*1j
     impedancia_generador = np.add(g_res,x)
     
-    #En caso de no haber una impedancia de cortocircuito añade una resistencia de 10^-6
+#En caso de no haber una impedancia de cortocircuito añade una resistencia de 10^-6
     for i in range(len(impedancia_generador)):
         if impedancia_generador[i] == 0:
             impedancia_generador[i] == 0+(0.000001)*1j
+
     return impedancia_generador
 
 
-#Calculo de las impedancias de las cargas
+#--------------------------------------------IMPEDANCIA DE LAS CARGAS------------------------------------------------
 def carga(c_res,c_reac, tipo):
     recorrido = len(tipo)
-
-    #Indica el tipo de reactancia
+#Tipo de reactancia(IND,CAP,RES)
     for i in range(recorrido):
         if tipo[i] == "CAP":
             c_reac[i] = c_reac[i]*(-1)
+
+#Impedancia de la carga
     x = (c_reac)*1j
     impedancia_carga = np.add(c_res,x)
     return impedancia_carga
 
-#Calculo de las impedancias de linea
+#-------------------------------------------IMPEDANCIAS DE LAS LINEAS------------------------------------------------
 def linea(l_res,l_reac, longitud, b_shunt):
+#Efecto capacitivo (Y shunt)
     y_shunt = b_shunt*1j*longitud
+
+#Impedancia de la linea
     x = l_reac*1j
     impedancia_linea = np.add(l_res,x)
     for i in range(len(longitud)):
         impedancia_linea[i] = impedancia_linea[i]*longitud[i]
     return impedancia_linea, y_shunt
 
-#Calculo de las corrientes inyectadas
+#--------------------------------------------CORRIENTES INYECTADAS--------------------------------------------------
 def corrientes(voltaje,phi,impedancia_corto,num_barra,ind_g):
-    #Grados a radianes
+#Grados a radianes
     for i in range(len(phi)):
         phi[i]= (phi[i] * math.pi)/180
 
+#Corrientes inyectadas
     corriente_inyect = np.zeros((num_barra,1),dtype="complex_")
     for i in range(len(ind_g)):
         indice = ind_g[i]-1
-        corriente_inyect[indice] = voltaje[i]*(math.cos(phi[i]) + 1j*math.sin(phi[i]))/impedancia_corto[i]
+        corriente_inyect[indice] = voltaje[i]*(math.cos(phi[i]) + 1j*math.sin(phi[i]))/impedancia_corto[i] 
     corriente_inyect = np.round(corriente_inyect,4)
 
     return corriente_inyect
