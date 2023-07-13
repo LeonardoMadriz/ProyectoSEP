@@ -94,6 +94,8 @@ def run():
     linea = np.concatenate(([barra_linea_i],[barra_linea_j],[imp_linea]),axis=0)      
     linea = np.transpose(linea)
     #print(imp_linea)
+    dato_linea = np.concatenate(([imp_resis_linea],[imp_react_linea]),axis=0)
+    dato_linea = np.transpose(dato_linea)
 
    
 #------------------------------------------------- CALCULO DE YBUS, VTH Y ZTH --------------------------------------------------
@@ -133,6 +135,16 @@ def run():
     p_gen, q_gen= potencia.generador(imp_gen, voltaje, phi, vth_rect, barra_gen_i)
     #print(p_gen)
 
+    #Potencia de la carga
+    s_load, p_load, q_load  = potencia.Cargas(imp_carga, vth_rect, barra_carga_i)
+
+    #Lineflow (Flujo de potencias)
+    p_ij, q_ij, p_ji, q_ji = potencia.lineflow(index_linea, dato_linea, longitud, vth_rect)
+
+    #Balance de potencias
+    delta_p, delta_q = potencia.balance(p_gen, q_gen, p_load, q_load)
+    #print(delta_p)
+    #print(delta_q)
 
 
 
