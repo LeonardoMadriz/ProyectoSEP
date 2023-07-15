@@ -25,6 +25,7 @@ def generador(imp_gen, voltaje, phi, vth, index_gen):
         
     return p_generado, q_generado
 #---------------------------------------------------- POTENCIA DE LA CARGA ------------------------------------------
+
 def Cargas(imp_carga, Vth, bus_i_carga):
 
     admitancia = 1/imp_carga
@@ -70,7 +71,6 @@ def balance(p_gen, q_gen, p_load, q_load):
 
     p_carga = p_load.sum(axis=0)
     q_carga = q_load.sum(axis=0)
-
     delta_p = p_entregado - p_carga
     delta_q = q_entregado - q_carga
     return delta_p, delta_q

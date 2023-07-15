@@ -16,7 +16,7 @@ def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longit
         if i == -1 or j == -1:
             continue
         else:
-            salida_bus[i,j] = (-1)/(matriz_dato[k,2])
+            salida_bus[i,j] = salida_bus[i,j] + (-1)/(matriz_dato[k,2])
             salida_bus[j,i] = salida_bus[i,j]
 
 #admitancias de la diagonal
@@ -30,9 +30,9 @@ def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longit
         j = int(matriz_dato[k,1].real-1)
         if i == -1 or j == -1:
             if i == -1:
-                salida_bus[j,j] = salida_bus[j,j] + 1/matriz_dato[k,2]
+                salida_bus[j,j] = salida_bus[j,j] + round(1/matriz_dato[k,2],4)
             elif j == -1:
-                salida_bus[i,i] = salida_bus[i,i] + 1/matriz_dato[k,2]
+                salida_bus[i,i] = salida_bus[i,i] + round(1/matriz_dato[k,2],4)
 
 
 #Influencia del efecto capacitivo (Y shunt)
@@ -43,15 +43,17 @@ def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longit
         if longitud[k] >80:
             matriz_shunt[i,i] = matriz_shunt[i,i] + yshunt[k]/2
             matriz_shunt[j,j] = matriz_shunt[j,j] + yshunt[k]/2
+    matriz_shunt = np.round(matriz_shunt,4)
 
     salida_bus = salida_bus + matriz_shunt
 
 #Influencia de los compensadores
     matriz_comp = np.zeros((num_barras,num_barras),dtype="complex_")
     for i in range(len(barra)):
-        matriz_comp[barra[i], barra[i]] = y_comp[i]
+        matriz_comp[barra[i], barra[i]] = matriz_comp[barra[i], barra[i]] + y_comp[i]
 
     salida_bus = matriz_comp + salida_bus
+    salida_bus = np.round(salida_bus,4)
 
     return salida_bus
 

@@ -25,8 +25,8 @@ def test_compen(vth, vmax, vmin,num_barras, v_nom):
 
 #---------------------------------------OBTENIENDO VALORES DE LOS COMPENSADORES-----------------------------------------
 def compensador_pasivo(num_barras, vth, vmin, vmax,zbus,v_nom):
-    xcomp = np.zeros((num_barras,1),dtype="complex_")
-    qcomp = np.zeros((num_barras,1),dtype="complex_")
+    xcomp = np.zeros((num_barras,1),dtype="float_")
+    qcomp = np.zeros((num_barras,1),dtype="float_")
     for k in range(num_barras):
         if vth[k,0] < vmin or vth[k,0] > vmax:
         #obtencion de los datos de Vth, Zth, Vnominal y Xth para montar la ecuacion cuadratica
