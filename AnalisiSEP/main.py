@@ -15,7 +15,14 @@ df_gen = pd.read_excel("data_io2.xlsx","GENERATION")                 #Generador
 df_lines = pd.read_excel("data_io2.xlsx","LINES")                    #Lineas
 df_load = pd.read_excel("data_io2.xlsx","LOAD")                      #Cargas
 df_vnom = pd.read_excel("data_io2.xlsx", "V_NOM")                    #COVENIN 159
-df_comp = pd.read_excel("data_io2.xlsx", "REACTIVE_COMP")            #Compensadores     
+df_comp = pd.read_excel("data_io2.xlsx", "REACTIVE_COMP")            #Compensadores
+df_out_bbus = pd.read_excel("data_io.xlsx", "OUTPUT BBUS")
+df_out_gbus = pd.read_excel("data_io.xlsx", "OUTPUT_GBUS")
+df_vth_zth = pd.read_excel("data_io.xlsx", "VTH_AND_ZTH") 
+df_S_lines = pd.read_excel("data_io.xlsx", "LINEFLOW")
+df_S_gen = pd.read_excel("data_io.xlsx", "S_GEN") 
+df_S_load = pd.read_excel("data_io.xlsx", "S_LOAD")
+df_S_balance = pd.read_excel("data_io.xlsx", "BALANCE_S")
 df_comp = df_comp.fillna(2121212)       
 df_load = df_load.fillna(2121212)                        
 
@@ -136,13 +143,14 @@ def run():
     verificador = list(filter(lambda x: 'CAP' in x, check_com2))
     verificador2 = list(filter(lambda x: 'IND' in x, check_com2))
 
-    if len(verificador) == 0 and len(verificador2) == 0:
+    if len(verificador) == 0 or len(verificador2) == 0:
         print("\n  [*] No es necesario compensar, según COVENIN 159")
     else:
         x_comp = compensadores.compensador_pasivo(num_barras,vth,v_min, v_max, zbus, v_nominal)
         print("\n  [*] Se requiere compensación en las barras:")
         for i in range(len(check_com2)):
             print("\t",check_com1[i],"---",check_com2[i])
+            df_vth_zth.loc[i, "Compensation Needed?"] = (f"{check_com1[i]} --- {check_com2[i]}")
         print("\n  [*] Se recomiendan los siguientes compensadores: ")
         for i in range(len(x_comp)):
             print("\t",x_comp[i])
@@ -162,13 +170,85 @@ def run():
     #print(" ")
     #print(q_ij)
 
+    #------------------------------------------ GUARDAR DATOS ---------------------------------------------------- 
+    
+    escritor_resultados = pd.ExcelWriter("data_io.xlsx", mode="a", if_sheet_exists="overlay")
+    # - B bus
+    for i in range(len(b_bus)):
+        
+        df_out_bbus.loc[:, i+1] = b_bus[:,i]
+        
+    df_out_bbus.to_excel(escritor_resultados, "OUTPUT BBUS", index=False) 
+
+    # - G bus   
+    for i in range(len(g_bus)):
+        
+        df_out_gbus.loc[:, i+1] = g_bus[:,i]
+        
+    df_out_gbus.to_excel(escritor_resultados, "OUTPUT_GBUS", index=False) 
+    # - Vth y Zth
+    modulo_vth = np.sqrt((vth_rect.real)**2 + (vth_rect.imag)**2)
+    deg_vth = np.arctan(vth_rect.imag/vth_rect.real) * 180 / np.pi
+    
+    for i in range(len(modulo_vth)):
+        df_vth_zth.loc[i, "Bus i"] = i+1
+        df_vth_zth.loc[i, "|Vth| (kV)"] = modulo_vth[i]
+        df_vth_zth.loc[i, "<Vth (degrees)"] = deg_vth[i]
+        df_vth_zth.loc[i, "Rth (ohms)"] = zth[i].real
+        df_vth_zth.loc[i, "Xth (ohms)"] = zth[i].imag            
+
+    df_vth_zth.to_excel(escritor_resultados, "VTH_AND_ZTH", index=False)
+    
+    # - Lineflow
+    for i in range(len(p_ij)):
+        df_S_lines.loc[i, "Bus i"] = barra_linea_i[i]
+        df_S_lines.loc[i, "Bus j"] = barra_linea_j[i]
+        df_S_lines.loc[i, "Pij [kW]"] = p_ij[i]
+        df_S_lines.loc[i, "Qij [kVAr]"] = q_ij[i]
+
+    df_S_lines.to_excel(escritor_resultados, "LINEFLOW", index=False)
+
+    # - S. Generador
+    for i in range(len(barra_gen_i)):
+        df_S_gen.loc[i, "Bus i"] = barra_gen_i[i]
+        df_S_gen.loc[i, "Pgen [kW]"] = p_gen[i]
+        df_S_gen.loc[i, "Qgen [kVAr]"] = q_gen[i]
+
+    df_S_gen.to_excel(escritor_resultados, "S_GEN", index=False)
+
+    # - S. Carga
+    for i in range(len(barra_carga_i)):
+        df_S_load.loc[i, "Bus i"] = barra_carga_i[i]
+        df_S_load.loc[i, "Pload [kW]"] = p_load[i]
+        df_S_load.loc[i, "Qload [kVAr]"] = q_load[i]
+
+    df_S_load.to_excel(escritor_resultados, "S_LOAD", index=False)
+
+    # - Balance S.
+    #for i in range(len(p_gen)):
+    df_S_balance.loc[0, "Pgen [kW]"] = np.sum(p_gen)
+    df_S_balance.loc[0, "Qgen [kVAr]"] = np.sum(q_gen)
+    df_S_balance.loc[0, "Pload [kW]"] = np.sum(p_load)
+    df_S_balance.loc[0, "Qload [kVAr]"] = np.sum(q_load)
+    df_S_balance.loc[0, "Delta P[kW]"] = delta_p
+    df_S_balance.loc[0, "Delta Q[kVAr]"] = delta_q
+
+    df_S_balance.to_excel(escritor_resultados, "BALANCE_S", index=False)
+
+    escritor_resultados.close()
+
+    # - - Generar otro archivo de copia
+    d_output_name = df_vnom.loc[0, "Data output"]
+
+    shutil.copy2("data_io.xlsx", d_output_name)
+
     #Balance de potencias
     delta_p, delta_q = potencia.balance(p_gen, q_gen, p_load, q_load)
     #print(delta_p)
     #print(delta_q)
 
     #Barra de carga
-    etapa = 10
+    etapa = 4
     print("\n  [*] Ya casi terminamos: ")
     with alive_bar(etapa) as bar:
         for i in range(etapa):
