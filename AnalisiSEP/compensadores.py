@@ -7,13 +7,13 @@ def test_compen(vth, vmax, vmin,num_barras, v_nom):
     tipo_com = []
     for i in range(filas_vth):
         if vth[i,0] > vmax:
-            mensaje.append(f"Necesita compensar la barra: [{i+1}]")
+            mensaje.append(f"Barra: [{i+1}]")
             tipo_com.append("IND")
         elif vth[i,0] < vmin:
-            mensaje.append(f"Necesita compensar la barra: [{i+1}]")
+            mensaje.append(f"Barra: [{i+1}]")
             tipo_com.append("CAP")
         else:
-            mensaje.append(f"No necesita compensar la barra: [{i+1}]")
+            mensaje.append(f"Barra: [{i+1}]")
             tipo_com.append("X")
 
     #------------------------------CALCULO DE LA BARRA CON LA PEOR CONDICION--------------------------------------------

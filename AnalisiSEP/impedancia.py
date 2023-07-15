@@ -54,3 +54,21 @@ def corrientes(voltaje,phi,impedancia_corto,num_barra,ind_g):
     corriente_inyect = np.round(corriente_inyect,4)
 
     return corriente_inyect
+
+#----------------------------------------------COMPENSADORES--------------------------------------------------------
+def compensadores(xcomp, barra, tipo):
+    #Tipo de compensador
+    for i in range(len(barra)):
+        if tipo[i] == "CAP":
+            xcomp[i] = xcomp[i]*(-1)
+        else:
+            continue
+
+    #Calcula la admitancia de los compensadores
+    ycomp = np.full((len(barra)),0, dtype="complex_")
+    index_bus = np.full((len(barra)),0)
+    for i in range(len(xcomp)):
+        index_bus[i] = barra[i] - 1
+        ycomp[i] = (1/xcomp[i])*1j
+
+    return ycomp, index_bus

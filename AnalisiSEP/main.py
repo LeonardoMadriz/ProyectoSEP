@@ -4,14 +4,19 @@ import impedancia
 import ybus
 import potencia
 import compensadores
-import sys
+import os
+from alive_progress import alive_bar
+import time
 
 #Lectura del archivo excel a trabajar
+os.system("clear")
+print("  [*] Iniciando las rutinas de calculo.....")
 df_gen = pd.read_excel("data_io.xlsx","GENERATION")                 #Generador
 df_lines = pd.read_excel("data_io.xlsx","LINES")                    #Lineas
 df_load = pd.read_excel("data_io.xlsx","LOAD")                      #Cargas
 df_vnom = pd.read_excel("data_io.xlsx", "V_NOM")                    #COVENIN 159
-
+df_comp = pd.read_excel("data_io.xlsx", "REACTIVE_COMP")            #Compensadores
+#print(df_comp)
 #Numero de barras del sistema electrico de potencia
 num_barras_i = max(df_lines.iloc[:,0])
 num_barras_j = max(df_lines.iloc[:,1])
@@ -59,19 +64,14 @@ index_linea = np.transpose(index_linea)
 v_nominal = float(df_vnom.iloc[0,1])                                #Voltaje nominal
 v_max = float(df_vnom.iloc[0,3])                                    #Voltaje máximo segun COVENIN 159
 v_min = float(df_vnom.iloc[0,2])                                    #Voltaje mínimo segun COVENIN 159
-#Warning:
-if v_nominal<0 or v_min<0 or v_max<0:
-    mensaje= "Valor negativo"
-    print("\n[*] Error 159: Valor de datos ingresados no es reconocido")
-    print("\tRevisar la casilla warning del excel __data_io.xlsx__ en la hoja V_NOM\n")
-    sys.exit(-1)
-elif df_vnom.iloc[0,1:4].isnull().sum() > 0:
-    mensaje = "Casilla vacia"
-    print("\n[*] Error 159: Valor de datos ingresados no es reconocido")
-    print("\tRevisar la casilla warning del excel __data_io.xlsx__ en la hoja V_NOM\n")
-    sys.exit(-1)
-        
 
+#COMPENSADORES
+barra_comp_i = np.array(df_comp.iloc[:,0])
+barra_comp_j = np.full((len(df_comp.iloc[:,0])),0)
+tipo_comp = np.array(df_comp.iloc[:,2])
+vnom_comp = np.array(df_comp.iloc[:,3])
+qcomp = np.array(df_comp.iloc[:,4])
+xcomp = np.array(df_comp.iloc[:,5])
 
 
 def run():
@@ -97,15 +97,17 @@ def run():
     dato_linea = np.concatenate(([imp_resis_linea],[imp_react_linea]),axis=0)
     dato_linea = np.transpose(dato_linea)
 
+    #Compensadores
+    y_comp, barra_bus = impedancia.compensadores(xcomp, barra_comp_i,tipo_comp)
    
 #------------------------------------------------- CALCULO DE YBUS, VTH Y ZTH --------------------------------------------------
     #Corrientes inyectadas
     corrientes_inyectadas = impedancia.corrientes(voltaje,phi,imp_gen,num_barras, barra_gen_i)
 
     #Y bus
-    y_bus = ybus.ybus(gen, carga, linea, num_barras,barra_linea_i,barra_linea_j,y_shunt, longitud)
+    y_bus = ybus.ybus(gen, carga, linea, num_barras,barra_linea_i,barra_linea_j,y_shunt, longitud, barra_bus, y_comp)
     y_bus = np.round(y_bus,4)
-    #print(y_bus)
+    print(y_bus)
 
 
     #Z de thevenin
@@ -126,25 +128,52 @@ def run():
     check_com1, check_com2 = compensadores.test_compen(vth, v_max, v_min, num_barras, v_nominal)
     #print(check_com1,check_com2)
 
-    x_comp = compensadores.compensador_pasivo(num_barras,vth,v_min, v_max, zbus, v_nominal)
-    #print(x_comp)
+    #comprobando si se necesita compensar
+    verificador = list(filter(lambda x: 'CAP' in x, check_com2))
+    verificador2 = list(filter(lambda x: 'IND' in x, check_com2))
+    print(verificador)
+    print(verificador2)
+
+    if len(verificador) == 0 or len(verificador2) == 0:
+        print("\n  [*] No es necesario compensar, según COVENIN 159")
+    else:
+        x_comp = compensadores.compensador_pasivo(num_barras,vth,v_min, v_max, zbus, v_nominal)
+        print("\n  [*] Se requiere compensación en las barras:")
+        for i in range(len(check_com2)):
+            print("\t",check_com1[i],"---",check_com2[i])
+        print("\n  [*] Se recomiendan los siguientes compensadores: ")
+        for i in range(len(x_comp)):
+            print("\t",x_comp[i])
 
 #------------------------------------------------ CALCULO DE LAS POTENCIAS ------------------------------------------------
 
     #Potencia del generador
     p_gen, q_gen= potencia.generador(imp_gen, voltaje, phi, vth_rect, barra_gen_i)
-    #print(p_gen)
+    #print(q_gen)
 
     #Potencia de la carga
-    s_load, p_load, q_load  = potencia.Cargas(imp_carga, vth_rect, barra_carga_i)
+    p_load, q_load  = potencia.Cargas(imp_carga, vth, barra_carga_i)
 
     #Lineflow (Flujo de potencias)
     p_ij, q_ij, p_ji, q_ji = potencia.lineflow(index_linea, dato_linea, longitud, vth_rect)
+    #print(p_ij)
+    #print(" ")
+    #print(q_ij)
 
     #Balance de potencias
     delta_p, delta_q = potencia.balance(p_gen, q_gen, p_load, q_load)
     #print(delta_p)
     #print(delta_q)
+
+    #Barra de carga
+    etapa = 10
+    print("\n  [*] Ya casi terminamos: ")
+    with alive_bar(etapa) as bar:
+        for i in range(etapa):
+            bar()
+            time.sleep(1)
+    print("\nListo\n")
+        
 
 
 

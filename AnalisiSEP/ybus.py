@@ -3,7 +3,7 @@ import cmath
 import math
 
 #------------------------------------------------------- Y BUS ---------------------------------------------------------
-def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longitud):
+def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longitud, barra, y_comp):
     matriz_dato = np.concatenate([generador, carga, linea], axis=0)
     salida_bus = np.zeros((num_barras,num_barras),dtype="complex_")
 
@@ -45,6 +45,13 @@ def ybus(generador, carga, linea, num_barras, index_li, index_lj, yshunt, longit
             matriz_shunt[j,j] = matriz_shunt[j,j] + yshunt[k]/2
 
     salida_bus = salida_bus + matriz_shunt
+
+#Influencia de los compensadores
+    matriz_comp = np.zeros((num_barras,num_barras),dtype="complex_")
+    for i in range(len(barra)):
+        matriz_comp[barra[i], barra[i]] = y_comp[i]
+
+    salida_bus = matriz_comp + salida_bus
 
     return salida_bus
 
