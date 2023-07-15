@@ -177,7 +177,7 @@ def run():
     # - B bus
     for i in range(len(b_bus)):
         
-        df_out_bbus.loc[:, i+1] = b_bus[:,i]
+        df_out_bbus.loc[:, i] = b_bus[:,i]
         
     df_out_bbus.to_excel(escritor_resultados, "OUTPUT BBUS", index=False) 
 
