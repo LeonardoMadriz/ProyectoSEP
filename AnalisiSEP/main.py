@@ -8,6 +8,7 @@ import os
 from alive_progress import alive_bar
 import time
 import sys
+import shutil
 
 #Lectura del archivo excel a trabajar
 os.system("clear")
